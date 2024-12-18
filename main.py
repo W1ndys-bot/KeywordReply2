@@ -185,25 +185,25 @@ async def get_groups():
 
 
 # 处理关键词回复
-async def handle_keyword_reply(msg, group_id, message_id):
+async def handle_keyword_reply(websocket, raw_message, group_id, message_id):
 
     # 检查群号是否开启
     if not await load_function_status(group_id):
         return
 
     # 获取关键词
-    keyword = str(msg.get("raw_message"))
+    keyword = str(raw_message.get("raw_message"))
 
     # 获取回复内容
     reply = await get_keyword_reply(keyword)
 
     reply = f"[CQ:reply,id={message_id}]{reply}"
     # 发送回复
-    await send_group_msg(group_id, reply)
+    await send_group_msg(websocket, group_id, reply)
 
 
 # 管理函数
-async def manage_KeywordReply2(group_id, raw_message):
+async def manage_KeywordReply2(websocket, group_id, raw_message):
     # 解析命令
     match = re.match("kr2add(.*) (.*)", raw_message) or re.match(
         "添加关键词(.*) (.*)", raw_message
@@ -213,7 +213,7 @@ async def manage_KeywordReply2(group_id, raw_message):
         reply = match.group(2)
         await update_keyword_reply(keyword, reply)
         await send_group_msg(
-            group_id, "添加成功，关键词：" + keyword + "，回复：" + reply
+            websocket, group_id, "添加成功，关键词：" + keyword + "，回复：" + reply
         )
         return
 
@@ -223,7 +223,7 @@ async def manage_KeywordReply2(group_id, raw_message):
     if match:
         keyword = match.group(1)
         await delete_keyword_reply(keyword)
-        await send_group_msg(group_id, "删除成功，关键词：" + keyword)
+        await send_group_msg(websocket, group_id, "删除成功，关键词：" + keyword)
         return
 
     match = re.match("kr2addgroup(.*)", raw_message) or re.match(
@@ -232,7 +232,7 @@ async def manage_KeywordReply2(group_id, raw_message):
     if match:
         group_id = match.group(1)
         await add_group(group_id)
-        await send_group_msg(group_id, "添加成功，群号：" + group_id)
+        await send_group_msg(websocket, group_id, "添加成功，群号：" + group_id)
         return
 
     match = re.match("kr2delgroup(.*)", raw_message) or re.match(
@@ -241,14 +241,14 @@ async def manage_KeywordReply2(group_id, raw_message):
     if match:
         group_id = match.group(1)
         await delete_group(group_id)
-        await send_group_msg(group_id, "删除成功，群号：" + group_id)
+        await send_group_msg(websocket, group_id, "删除成功，群号：" + group_id)
         return
 
     match = re.match("kr2listgroup", raw_message) or re.match("查看群号", raw_message)
     if match:
         groups = await get_groups()
         group_list = "\n".join([group[0] for group in groups])
-        await send_group_msg(group_id, "群号列表：\n" + group_list)
+        await send_group_msg(websocket, group_id, "群号列表：\n" + group_list)
         return
 
 
@@ -272,10 +272,10 @@ async def handle_KeywordReply2_group_message(websocket, msg):
         # 如果有权限，可以进行管理
         if authorized:
             # 管理
-            await manage_KeywordReply2(group_id, raw_message)
+            await manage_KeywordReply2(websocket, group_id, raw_message)
         else:
             # 处理关键词回复
-            await handle_keyword_reply(msg, group_id, message_id)
+            await handle_keyword_reply(websocket, raw_message, group_id, message_id)
 
     except Exception as e:
         logging.error(f"处理KeywordReply2群消息失败: {e}")
