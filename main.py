@@ -161,7 +161,8 @@ async def get_keyword_reply(keyword):
         cursor = conn.cursor()
         # 使用完全匹配
         cursor.execute(
-            "SELECT reply FROM keyword_replies WHERE keyword = ? COLLATE NOCASE", (keyword.strip(),)
+            "SELECT reply FROM keyword_replies WHERE keyword = ? COLLATE NOCASE",
+            (keyword.strip(),),
         )
         reply = cursor.fetchone()
         conn.close()
@@ -202,9 +203,10 @@ async def handle_keyword_reply(websocket, raw_message, group_id, message_id):
     # 获取回复内容
     reply = await get_keyword_reply(keyword)
 
-    reply = f"[CQ:reply,id={message_id}]{reply}"
-    # 发送回复
-    await send_group_msg(websocket, group_id, reply)
+    if reply:
+        reply = f"[CQ:reply,id={message_id}]{reply}"
+        # 发送回复
+        await send_group_msg(websocket, group_id, reply)
 
 
 # 管理函数
