@@ -219,7 +219,7 @@ async def manage_KeywordReply2(websocket, group_id, raw_message):
         reply = match.group(2).strip()
         await update_keyword_reply(keyword, reply)
         await send_group_msg(
-            websocket, group_id, "添加成功，关键词：" + keyword + "，回复：" + reply
+            websocket, group_id, "添加成功\n关键词：" + keyword + "\n回复：" + reply
         )
         return
 
