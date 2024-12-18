@@ -153,13 +153,15 @@ async def delete_group(group_id):
 
 
 # 获取关键词回复
+# 获取关键词回复
 async def get_keyword_reply(keyword):
     try:
         db_path = os.path.join(DATA_DIR, "keyword_reply.db")
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
+        # 使用完全匹配
         cursor.execute(
-            "SELECT reply FROM keyword_replies WHERE keyword = ?", (keyword,)
+            "SELECT reply FROM keyword_replies WHERE keyword = ? COLLATE NOCASE", (keyword.strip(),)
         )
         reply = cursor.fetchone()
         conn.close()
@@ -207,13 +209,13 @@ async def handle_keyword_reply(websocket, raw_message, group_id, message_id):
 
 # 管理函数
 async def manage_KeywordReply2(websocket, group_id, raw_message):
-    # 解析命令
-    match = re.match("kr2add(.*) (.*)", raw_message) or re.match(
-        "添加关键词(.*) (.*)", raw_message
+    # 使用 re.S 标志来允许 . 匹配换行符
+    match = re.match("kr2add(.*?) (.*)", raw_message, re.S) or re.match(
+        "添加关键词(.*?) (.*)", raw_message, re.S
     )
     if match:
-        keyword = match.group(1)
-        reply = match.group(2)
+        keyword = match.group(1).strip()
+        reply = match.group(2).strip()
         await update_keyword_reply(keyword, reply)
         await send_group_msg(
             websocket, group_id, "添加成功，关键词：" + keyword + "，回复：" + reply
