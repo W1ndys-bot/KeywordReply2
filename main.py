@@ -178,7 +178,9 @@ async def get_groups():
         cursor.execute("SELECT group_id FROM groups")
         groups = cursor.fetchall()
         conn.close()
-        return groups
+        logging.info(f"获取群号列表成功: {groups}")
+        # 转换为列表
+        return [group[0] for group in groups]
     except Exception as e:
         logging.error(f"获取群号列表失败: {e}")
         return []
@@ -186,13 +188,14 @@ async def get_groups():
 
 # 处理关键词回复
 async def handle_keyword_reply(websocket, raw_message, group_id, message_id):
+    open_groups = await get_groups()
 
     # 检查群号是否开启
-    if not await load_function_status(group_id):
+    if group_id not in open_groups:
         return
 
     # 获取关键词
-    keyword = str(raw_message.get("raw_message"))
+    keyword = raw_message
 
     # 获取回复内容
     reply = await get_keyword_reply(keyword)
@@ -247,7 +250,7 @@ async def manage_KeywordReply2(websocket, group_id, raw_message):
     match = re.match("kr2listgroup", raw_message) or re.match("查看群号", raw_message)
     if match:
         groups = await get_groups()
-        group_list = "\n".join([group[0] for group in groups])
+        group_list = "\n".join(groups)
         await send_group_msg(websocket, group_id, "群号列表：\n" + group_list)
         return
 
@@ -273,9 +276,9 @@ async def handle_KeywordReply2_group_message(websocket, msg):
         if authorized:
             # 管理
             await manage_KeywordReply2(websocket, group_id, raw_message)
-        else:
-            # 处理关键词回复
-            await handle_keyword_reply(websocket, raw_message, group_id, message_id)
+
+        # 处理关键词回复
+        await handle_keyword_reply(websocket, raw_message, group_id, message_id)
 
     except Exception as e:
         logging.error(f"处理KeywordReply2群消息失败: {e}")
