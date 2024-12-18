@@ -181,7 +181,6 @@ async def get_groups():
         cursor.execute("SELECT group_id FROM groups")
         groups = cursor.fetchall()
         conn.close()
-        logging.info(f"获取群号列表成功: {groups}")
         # 转换为列表
         return [group[0] for group in groups]
     except Exception as e:
